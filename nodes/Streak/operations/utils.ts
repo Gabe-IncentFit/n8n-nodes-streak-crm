@@ -4,8 +4,10 @@ import {
 	ILoadOptionsFunctions,
 	IWebhookFunctions,
 	IDataObject,
+	NodeApiError,
 	NodeOperationError,
 	IHttpRequestMethods,
+	JsonObject,
 } from 'n8n-workflow';
 
 /**
@@ -80,20 +82,6 @@ export function getApiVersionForEndpoint(endpoint: string): 'v1' | 'v2' {
 }
 
 /**
- * Get the Streak API key from credentials
- */
-export async function getStreakApiKey(context: StreakApiContext): Promise<string> {
-	const credentials = await context.getCredentials('streakApi');
-	if (!credentials?.apiKey) {
-		throw new NodeOperationError(
-			context.getNode(),
-			'No API key provided. Please configure your Streak API credentials.',
-		);
-	}
-	return credentials.apiKey as string;
-}
-
-/**
  * Make a request to the Streak API. Works from any n8n context (execute, hook, webhook, loadOptions).
  * Accepts endpoint fragments (e.g. `/users/me`) and auto-detects the API version.
  */
@@ -105,7 +93,6 @@ export async function streakApiRequest(
 	query?: IDataObject,
 	apiVersion?: 'v1' | 'v2',
 ): Promise<IDataObject | IDataObject[]> {
-	const apiKey = await getStreakApiKey(context);
 	const version = apiVersion || getApiVersionForEndpoint(endpoint);
 	const url = `https://api.streak.com/api/${version}${endpoint}`;
 	const headers: IDataObject = {
@@ -115,23 +102,16 @@ export async function streakApiRequest(
 		headers['Content-Type'] = 'application/json';
 	}
 	try {
-		return (await context.helpers.httpRequest({
+		return (await context.helpers.httpRequestWithAuthentication.call(context, 'streakApi', {
 			method,
 			url,
 			headers,
-			auth: {
-				username: apiKey,
-				password: '',
-			},
 			qs: query,
 			body,
 			json: true,
 		})) as IDataObject | IDataObject[];
 	} catch (error) {
-		throw new NodeOperationError(
-			context.getNode(),
-			error instanceof Error ? error : new Error(`Streak API error on ${method} ${endpoint}`),
-		);
+		throw new NodeApiError(context.getNode(), error as JsonObject);
 	}
 }
 
@@ -147,7 +127,6 @@ export async function streakApiFormRequest(
 	query?: IDataObject,
 	apiVersion?: 'v1' | 'v2',
 ): Promise<IDataObject | IDataObject[]> {
-	const apiKey = await getStreakApiKey(context);
 	const version = apiVersion || getApiVersionForEndpoint(endpoint);
 	const url = `https://api.streak.com/api/${version}${endpoint}`;
 
@@ -163,26 +142,19 @@ export async function streakApiFormRequest(
 	}
 
 	try {
-		return (await context.helpers.httpRequest({
+		return (await context.helpers.httpRequestWithAuthentication.call(context, 'streakApi', {
 			method,
 			url,
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			auth: {
-				username: apiKey,
-				password: '',
-			},
 			qs: query,
 			body: formBody,
 			json: true,
 		})) as IDataObject | IDataObject[];
 	} catch (error) {
-		throw new NodeOperationError(
-			context.getNode(),
-			error instanceof Error ? error : new Error(`Streak API error on ${method} ${endpoint}`),
-		);
+		throw new NodeApiError(context.getNode(), error as JsonObject);
 	}
 }
 

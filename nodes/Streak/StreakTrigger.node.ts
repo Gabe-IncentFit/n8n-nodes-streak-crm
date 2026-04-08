@@ -7,6 +7,7 @@ import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 } from 'n8n-workflow';
+import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { streakApiRequest } from './operations/utils';
 
@@ -24,7 +25,7 @@ export class StreakTrigger implements INodeType {
 		},
 		usableAsTool: true,
 		inputs: [],
-		outputs: ['main'],
+		outputs: [NodeConnectionTypes.Main],
 		credentials: [
 			{
 				displayName: 'Streak API Key',
@@ -202,7 +203,10 @@ export class StreakTrigger implements INodeType {
 							`/teams/${teamKey}/webhooks`,
 						)) as IDataObject[];
 					}
-				} catch {
+				} catch (error: unknown) {
+					if (error instanceof Error) {
+						this.logger.warn(`Streak webhook check failed: ${error.message}`);
+					}
 					return false;
 				}
 
@@ -270,8 +274,14 @@ export class StreakTrigger implements INodeType {
 						'DELETE',
 						`/webhooks/${webhookKey}`,
 					);
-				} catch {
-					// Webhook may already be deleted, that's fine
+				} catch (error: unknown) {
+					// Webhook may already be deleted — log unexpected failures so operators
+					// know if the webhook was orphaned on Streak's side
+					if (error instanceof Error) {
+						this.logger.warn(
+							`Failed to delete Streak webhook ${webhookKey}: ${error.message}`,
+						);
+					}
 				}
 
 				delete webhookData.webhookKey;
