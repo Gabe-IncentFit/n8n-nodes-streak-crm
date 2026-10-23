@@ -120,10 +120,10 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 - **Add Thread to Box** - Link a Gmail thread to a box
 
 ### File Operations
-- **List Files** - Get all files attached to a box
-- **Get File** - Retrieve a specific file by key
-- **Upload File** - Upload a file to a box
-- **Delete File** - Remove a file
+- **List Files in Box** - Get all files attached to a box
+- **Get File Metadata** - Retrieve a specific file's metadata by key
+- **Get File Contents** - Retrieve a file's contents (only for files of type `GMAIL_API`)
+- **Add File to Box** - Attach a Google Drive file to a box
 
 ### Newsfeed Operations
 - **Get Pipeline Newsfeed** - Get recent activity for a pipeline
@@ -238,7 +238,7 @@ This is a simple workflow to create a pipeline and then add a box to it:
 - Added Comment operations (list, get, create, delete)
 - Added Meeting operations (list, get, create, update, delete)
 - Added Thread operations (list, get, get by Gmail ID, add to box)
-- Added File operations (list, get, upload, delete)
+- Added File operations (list, get metadata, get contents, add Google Drive file to box)
 - Added Newsfeed operations (pipeline, box, all)
 - Added Snippet operations (list, get, create, delete)
 - Added Search operations (by query, by name)

@@ -57,7 +57,7 @@ export async function handleFileOperations(
 			this,
 			'POST',
 			'/files/',
-			{ driveFileId, driveBoxKey: boxKey },
+			[{ driveFileId, driveBoxKey: boxKey }],
 			undefined,
 			'v2',
 		);
