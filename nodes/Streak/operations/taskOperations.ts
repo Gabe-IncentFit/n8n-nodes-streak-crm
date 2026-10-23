@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, validateParameters, handlePagination } from './utils';
+import { streakApiRequest, validateParameters, handlePagination, getPageParameter } from './utils';
 
 /**
  * Handle task-related operations for the Streak API
@@ -44,12 +44,13 @@ export async function handleTaskOperations(
 
 			return results;
 		} else {
+			const page = getPageParameter.call(this, itemIndex);
 			const response = await streakApiRequest(
 				this,
 				'GET',
 				`/boxes/${boxKey}/tasks`,
 				undefined,
-				{ limit },
+				{ page, limit },
 			);
 
 			// Handle the list tasks response - should return an array of tasks

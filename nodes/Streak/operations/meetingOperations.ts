@@ -1,5 +1,10 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
-import { streakApiRequest, validateParameters } from './utils';
+import {
+	streakApiRequest,
+	validateParameters,
+	handlePagination,
+	getPageParameter,
+} from './utils';
 
 /**
  * Handle meeting-related operations for the Streak API
@@ -19,7 +24,20 @@ export async function handleMeetingOperations(
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		// v2 returns all meetings with no pagination params
+		if (!returnAll) {
+			// v2 pages meetings server-side with page/limit
+			return await handlePagination(
+				this,
+				`/boxes/${boxKey}/meetings`,
+				false,
+				limit,
+				{},
+				'v2',
+				getPageParameter.call(this, itemIndex),
+			);
+		}
+
+		// Without page/limit, v2 returns every meeting in one response
 		const response = (await streakApiRequest(
 			this,
 			'GET',
@@ -31,10 +49,6 @@ export async function handleMeetingOperations(
 			results = response.results as IDataObject[];
 		} else if (Array.isArray(response)) {
 			results = response;
-		}
-
-		if (!returnAll && results.length > limit) {
-			return results.slice(0, limit);
 		}
 
 		return results;

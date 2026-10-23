@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, validateParameters, handlePagination } from './utils';
+import { streakApiRequest, validateParameters, handlePagination, getPageParameter } from './utils';
 
 import { resolveDropdownValue } from './fieldHelpers';
 
@@ -94,11 +94,22 @@ export async function handleBoxOperations(
 		const sortBy = this.getNodeParameter('sortBy', itemIndex, 'lastUpdatedTimestamp') as string;
 		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
 		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
+		const page = returnAll ? 0 : getPageParameter.call(this, itemIndex);
 
 		validateParameters.call(this, { pipelineKey }, ['pipelineKey'], itemIndex);
 
 		// If search query is provided, use the search endpoint
 		if (trimmedSearchQuery) {
+			// The search endpoint doesn't page by limit, so a later page can't be fetched here.
+			// Fail loudly rather than return page 0 again, which would never end a page loop.
+			if (page > 0) {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Page is not supported together with Search Query. Clear Search Query to page through boxes, or set Page to 0.',
+					{ itemIndex },
+				);
+			}
+
 			// Use the search endpoint for queries
 			const searchParams: IDataObject = { query: trimmedSearchQuery };
 			if (pipelineKey) {
@@ -138,6 +149,7 @@ export async function handleBoxOperations(
 				returnAll ? 100 : limit,
 				queryParams,
 				'v1',
+				page,
 			);
 		}
 	} else if (operation === 'getBox') {

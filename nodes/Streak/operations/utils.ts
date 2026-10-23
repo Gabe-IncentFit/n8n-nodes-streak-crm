@@ -177,7 +177,27 @@ export function validateParameters(
 }
 
 /**
- * Handle pagination for list operations
+ * Read the optional "Page" parameter (0-based) and check it is a whole number >= 0.
+ * Returns 0 when the parameter is not set, so existing workflows keep fetching the first page.
+ */
+export function getPageParameter(this: IExecuteFunctions, itemIndex: number): number {
+	const page = Number(this.getNodeParameter('page', itemIndex, 0) ?? 0);
+
+	if (!Number.isInteger(page) || page < 0) {
+		throw new NodeOperationError(
+			this.getNode(),
+			`Page must be a whole number of 0 or more (got ${page})`,
+			{ itemIndex },
+		);
+	}
+
+	return page;
+}
+
+/**
+ * Handle pagination for list operations.
+ * With returnAll, fetches every page starting from page 0 and ignores `page`.
+ * Without returnAll, fetches the single page `page` (0-based) of size `limit`.
  */
 export async function handlePagination(
 	context: StreakApiContext,
@@ -186,6 +206,7 @@ export async function handlePagination(
 	limit = 100,
 	additionalParams: IDataObject = {},
 	apiVersion?: 'v1' | 'v2',
+	page = 0,
 ): Promise<IDataObject[]> {
 	let responseData: IDataObject[] = [];
 
@@ -212,12 +233,12 @@ export async function handlePagination(
 
 	if (returnAll) {
 		let hasMore = true;
-		let page = 0;
+		let currentPage = 0;
 
 		while (hasMore) {
 			const query: IDataObject = {
 				...additionalParams,
-				page,
+				page: currentPage,
 				limit,
 			};
 
@@ -240,13 +261,13 @@ export async function handlePagination(
 			}
 
 			if (hasMore) {
-				page++;
+				currentPage++;
 			}
 		}
 	} else {
 		const query: IDataObject = {
 			...additionalParams,
-			page: 0,
+			page,
 			limit,
 		};
 
