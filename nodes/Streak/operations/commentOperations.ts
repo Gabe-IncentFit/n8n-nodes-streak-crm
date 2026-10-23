@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, validateParameters } from './utils';
+import { streakApiRequest, validateParameters, fetchAllResults } from './utils';
 
 /**
  * Handle comment-related operations for the Streak API
@@ -14,30 +14,11 @@ export async function handleCommentOperations(
 			| string
 			| { mode: string; value: string };
 		const boxKey = typeof boxKeyParam === 'string' ? boxKeyParam : boxKeyParam.value;
-		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
-		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		// v2 returns { hasNextPage, results } with no pagination params
-		const response = (await streakApiRequest(
-			this,
-			'GET',
-			`/boxes/${boxKey}/comments`,
-		)) as IDataObject;
-
-		let results: IDataObject[] = [];
-		if (response?.results && Array.isArray(response.results)) {
-			results = response.results as IDataObject[];
-		} else if (Array.isArray(response)) {
-			results = response;
-		}
-
-		if (!returnAll && results.length > limit) {
-			return results.slice(0, limit);
-		}
-
-		return results;
+		// v2 returns { hasNextPage, results } and takes no paging params
+		return await fetchAllResults(this, `/boxes/${boxKey}/comments`);
 	} else if (operation === 'getComment') {
 		const commentKey = this.getNodeParameter('commentKey', itemIndex) as string;
 

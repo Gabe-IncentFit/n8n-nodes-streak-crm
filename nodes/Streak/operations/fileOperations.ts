@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, validateParameters, handlePagination } from './utils';
+import { streakApiRequest, validateParameters, fetchAllResults } from './utils';
 
 /**
  * Read Drive file IDs from text separated by commas or new lines, or from an array
@@ -32,19 +32,10 @@ export async function handleFileOperations(
 			| string
 			| { mode: string; value: string };
 		const boxKey = typeof boxKeyParam === 'string' ? boxKeyParam : boxKeyParam.value;
-		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
-		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		return await handlePagination(
-			this,
-			`/boxes/${boxKey}/files`,
-			returnAll,
-			returnAll ? 100 : limit,
-			{},
-			'v1',
-		);
+		return await fetchAllResults(this, `/boxes/${boxKey}/files`, undefined, 'v1');
 	} else if (operation === 'getFile') {
 		const fileKey = this.getNodeParameter('fileKey', itemIndex) as string;
 

@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
-import { streakApiRequest, streakApiFormRequest, validateParameters, handlePagination } from './utils';
+import { streakApiRequest, streakApiFormRequest, validateParameters, fetchAllResults } from './utils';
 
 /**
  * Handle thread-related operations for the Streak API
@@ -14,18 +14,10 @@ export async function handleThreadOperations(
 			| string
 			| { mode: string; value: string };
 		const boxKey = typeof boxKeyParam === 'string' ? boxKeyParam : boxKeyParam.value;
-		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
-		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		return await handlePagination(
-			this,
-			`/boxes/${boxKey}/threads`,
-			returnAll,
-			returnAll ? 100 : limit,
-			{},
-		);
+		return await fetchAllResults(this, `/boxes/${boxKey}/threads`);
 	} else if (operation === 'getThread') {
 		const threadKey = this.getNodeParameter('threadKey', itemIndex) as string;
 

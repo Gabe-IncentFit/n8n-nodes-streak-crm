@@ -177,6 +177,45 @@ export function validateParameters(
 }
 
 /**
+ * Pull the results out of a Streak list response, which is either a bare array
+ * or an object of the form `{ results: [...], hasNextPage }`.
+ */
+function parseListResponse(response: IDataObject | IDataObject[]): {
+	results: IDataObject[];
+	hasNextPage?: boolean;
+} {
+	if (Array.isArray(response)) {
+		return { results: response };
+	}
+
+	if (response?.results && Array.isArray(response.results)) {
+		return {
+			results: response.results as IDataObject[],
+			hasNextPage: typeof response.hasNextPage === 'boolean' ? response.hasNextPage : undefined,
+		};
+	}
+
+	return {
+		results: [response],
+		hasNextPage: typeof response?.hasNextPage === 'boolean' ? response.hasNextPage : undefined,
+	};
+}
+
+/**
+ * Fetch a list endpoint that Streak doesn't page: one request, no page/limit, every result.
+ */
+export async function fetchAllResults(
+	context: StreakApiContext,
+	endpoint: string,
+	query?: IDataObject,
+	apiVersion?: 'v1' | 'v2',
+): Promise<IDataObject[]> {
+	const response = await streakApiRequest(context, 'GET', endpoint, undefined, query, apiVersion);
+
+	return parseListResponse(response).results;
+}
+
+/**
  * Read the optional "Page" parameter (0-based) and check it is a whole number >= 0.
  * Returns 0 when the parameter is not set, so existing workflows keep fetching the first page.
  */
@@ -210,27 +249,6 @@ export async function handlePagination(
 ): Promise<IDataObject[]> {
 	let responseData: IDataObject[] = [];
 
-	const parsePage = (
-		response: IDataObject | IDataObject[],
-	): { results: IDataObject[]; hasNextPage?: boolean } => {
-		if (Array.isArray(response)) {
-			return { results: response };
-		}
-
-		if (response?.results && Array.isArray(response.results)) {
-			return {
-				results: response.results as IDataObject[],
-				hasNextPage:
-					typeof response.hasNextPage === 'boolean' ? response.hasNextPage : undefined,
-			};
-		}
-
-		return {
-			results: [response],
-			hasNextPage: typeof response?.hasNextPage === 'boolean' ? response.hasNextPage : undefined,
-		};
-	};
-
 	if (returnAll) {
 		let hasMore = true;
 		let currentPage = 0;
@@ -251,7 +269,7 @@ export async function handlePagination(
 				apiVersion,
 			);
 
-			const { results, hasNextPage } = parsePage(response);
+			const { results, hasNextPage } = parseListResponse(response);
 			responseData = [...responseData, ...results];
 
 			if (hasNextPage !== undefined) {
@@ -280,7 +298,7 @@ export async function handlePagination(
 			apiVersion,
 		);
 
-		responseData = parsePage(response).results;
+		responseData = parseListResponse(response).results;
 	}
 
 	return responseData;

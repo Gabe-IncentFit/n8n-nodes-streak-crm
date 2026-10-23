@@ -1,7 +1,8 @@
 import type { INodeProperties } from 'n8n-workflow';
 
 export const sharedProperties: INodeProperties[] = [
-	// Return All option for list operations
+	// Return All and Limit, only for list operations whose Streak endpoint accepts a limit.
+	// Endpoints that always return every result in one response get neither.
 	{
 		displayName: 'Return All',
 		name: 'returnAll',
@@ -10,21 +11,11 @@ export const sharedProperties: INodeProperties[] = [
 		description: 'Whether to return all results or only up to a given limit',
 		displayOptions: {
 			show: {
-				resource: ['pipeline', 'box', 'field', 'thread', 'file', 'comment', 'meeting', 'newsfeed', 'snippet', 'task'],
+				resource: ['box', 'meeting', 'task'],
 				operation: [
-					'listAllPipelines',
 					'listBoxes',
 					'getTimeline',
-					'listFields',
-					'listFieldValues',
-					'listThreadsInBox',
-					'listFilesInBox',
-					'listCommentsInBox',
 					'listMeetingsInBox',
-					'getPipelineNewsfeed',
-					'getBoxNewsfeed',
-					'getAllNewsfeed',
-					'listSnippets',
 					'getTasksInBox',
 				],
 			},
@@ -41,21 +32,11 @@ export const sharedProperties: INodeProperties[] = [
 		},
 		displayOptions: {
 			show: {
-				resource: ['pipeline', 'box', 'field', 'thread', 'file', 'comment', 'meeting', 'newsfeed', 'snippet', 'task'],
+				resource: ['box', 'meeting', 'task'],
 				operation: [
-					'listAllPipelines',
 					'listBoxes',
 					'getTimeline',
-					'listFields',
-					'listFieldValues',
-					'listThreadsInBox',
-					'listFilesInBox',
-					'listCommentsInBox',
 					'listMeetingsInBox',
-					'getPipelineNewsfeed',
-					'getBoxNewsfeed',
-					'getAllNewsfeed',
-					'listSnippets',
 					'getTasksInBox',
 				],
 				returnAll: [false],

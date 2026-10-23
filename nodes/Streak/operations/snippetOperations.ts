@@ -1,5 +1,5 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError } from 'n8n-workflow';
-import { streakApiRequest, streakApiFormRequest, validateParameters, handlePagination } from './utils';
+import { streakApiRequest, streakApiFormRequest, validateParameters, fetchAllResults } from './utils';
 
 /**
  * Handle snippet-related operations for the Streak API
@@ -10,16 +10,7 @@ export async function handleSnippetOperations(
 	itemIndex: number,
 ): Promise<IDataObject | IDataObject[]> {
 	if (operation === 'listSnippets') {
-		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
-		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
-
-		return await handlePagination(
-			this,
-			'/snippets',
-			returnAll,
-			returnAll ? 100 : limit,
-			{},
-		);
+		return await fetchAllResults(this, '/snippets');
 	} else if (operation === 'getSnippet') {
 		const snippetKey = this.getNodeParameter('snippetKey', itemIndex) as string;
 

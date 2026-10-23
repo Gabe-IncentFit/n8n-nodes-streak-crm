@@ -236,7 +236,9 @@ This is a simple workflow to create a pipeline and then add a box to it:
 - On List Boxes, Page only works without a **Search Query**. With a search query, any page other than 0 is rejected.
 - Streak removes items you can't access after it builds each page, so a page can come back short, or even empty, before the end.
 
-The other list operations have no Page option because Streak's API doesn't page them. **Get Box Timeline** pages by time instead: set **Start Timestamp** to the oldest entry you've already fetched.
+**Get Box Timeline** has Return All and Limit but no Page, because Streak pages the timeline by time rather than page number. To step back through it, set **Start Timestamp** to the oldest entry you've already fetched.
+
+The other list operations have no Return All, Limit or Page. Streak returns all of their results in one response, so they always output everything.
 
 ### Example: Looping through boxes newest first until a cutoff date
 
