@@ -1,5 +1,6 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
 import { streakApiRequest, validateParameters } from './utils';
+import { webhookScopeMismatch } from '../properties/webhookEvents';
 
 /**
  * Handle webhook-related operations for the Streak API
@@ -34,22 +35,29 @@ export async function handleWebhookOperations(
 
 		validateParameters.call(this, { event, targetUrl }, ['event', 'targetUrl'], itemIndex);
 
+		const mismatch = webhookScopeMismatch(event, scope);
+		if (mismatch) {
+			throw new NodeOperationError(this.getNode(), mismatch, { itemIndex });
+		}
+
 		const body: IDataObject = {
 			event,
 			targetUrl,
 		};
 
+		// Streak reads the pipeline or team key from the query string, not the body
+		const query: IDataObject = {};
 		if (scope === 'pipeline') {
 			const pipelineKey = this.getNodeParameter('pipelineKey', itemIndex) as string;
 			validateParameters.call(this, { pipelineKey }, ['pipelineKey'], itemIndex);
-			body.pipelineKey = pipelineKey;
+			query.pipelineKey = pipelineKey;
 		} else {
 			const teamKey = this.getNodeParameter('teamKey', itemIndex) as string;
 			validateParameters.call(this, { teamKey }, ['teamKey'], itemIndex);
-			body.teamKey = teamKey;
+			query.teamKey = teamKey;
 		}
 
-		return await streakApiRequest(this, 'POST', '/webhooks', body);
+		return await streakApiRequest(this, 'POST', '/webhooks', body, query);
 	} else if (operation === 'deleteWebhook') {
 		const webhookKey = this.getNodeParameter('webhookKey', itemIndex) as string;
 

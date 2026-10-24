@@ -7,9 +7,15 @@ import type {
 	IWebhookFunctions,
 	IWebhookResponseData,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+import { loadOptions as sharedLoadOptions } from './methods/loadOptions';
 import { streakApiRequest } from './operations/utils';
+import {
+	PIPELINE_WEBHOOK_EVENTS,
+	TEAM_WEBHOOK_EVENTS,
+	webhookScopeMismatch,
+} from './properties/webhookEvents';
 
 export class StreakTrigger implements INodeType {
 	description: INodeTypeDescription = {
@@ -85,35 +91,34 @@ export class StreakTrigger implements INodeType {
 				},
 				description: 'The team to listen for events on. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
+			// Streak only allows pipeline events on pipeline webhooks and team events on team webhooks
 			{
 				displayName: 'Event',
 				name: 'event',
 				type: 'options',
-				options: [
-					{ name: 'Box Change Pipeline', value: 'BOX_CHANGE_PIPELINE' },
-					{ name: 'Box Change Stage', value: 'BOX_CHANGE_STAGE' },
-					{ name: 'Box Create', value: 'BOX_CREATE' },
-					{ name: 'Box Delete', value: 'BOX_DELETE' },
-					{ name: 'Box Edit', value: 'BOX_EDIT' },
-					{ name: 'Box New Email Address', value: 'BOX_NEW_EMAIL_ADDRESS' },
-					{ name: 'Comment Create', value: 'COMMENT_CREATE' },
-					{ name: 'Contact Create', value: 'CONTACT_CREATE' },
-					{ name: 'Contact Delete', value: 'CONTACT_DELETE' },
-					{ name: 'Contact Update', value: 'CONTACT_UPDATE' },
-					{ name: 'Meeting Create', value: 'MEETING_CREATE' },
-					{ name: 'Meeting Update', value: 'MEETING_UPDATE' },
-					{ name: 'Org Create', value: 'ORG_CREATE' },
-					{ name: 'Org Delete', value: 'ORG_DELETE' },
-					{ name: 'Org Update', value: 'ORG_UPDATE' },
-					{ name: 'Stage Create', value: 'STAGE_CREATE' },
-					{ name: 'Task Complete', value: 'TASK_COMPLETE' },
-					{ name: 'Task Create', value: 'TASK_CREATE' },
-					{ name: 'Task Due', value: 'TASK_DUE' },
-					{ name: 'Task Updated', value: 'TASK_UPDATED' },
-				],
+				options: PIPELINE_WEBHOOK_EVENTS,
 				default: 'BOX_CREATE',
 				required: true,
-				description: 'The event to listen for',
+				description: 'The pipeline event to listen for',
+				displayOptions: {
+					show: {
+						scope: ['pipeline'],
+					},
+				},
+			},
+			{
+				displayName: 'Event',
+				name: 'event',
+				type: 'options',
+				options: TEAM_WEBHOOK_EVENTS,
+				default: 'CONTACT_CREATE',
+				required: true,
+				description: 'The team event to listen for (contacts and organizations)',
+				displayOptions: {
+					show: {
+						scope: ['team'],
+					},
+				},
 			},
 		],
 	};
@@ -135,29 +140,8 @@ export class StreakTrigger implements INodeType {
 					}));
 			},
 
-			async getTeamOptions(this: ILoadOptionsFunctions) {
-				const response = (await streakApiRequest(
-					this,
-					'GET',
-					'/users/me/teams',
-				)) as Array<{ results?: Array<{ key: string; name: string }> }>;
-
-				const teams: Array<{ key: string; name: string }> = [];
-				if (Array.isArray(response)) {
-					for (const item of response) {
-						if (item?.results && Array.isArray(item.results)) {
-							teams.push(...item.results);
-						}
-					}
-				}
-
-				return teams
-					.filter((t) => t && t.key)
-					.map((t) => ({
-						name: t.name || 'Unnamed Team',
-						value: t.key,
-					}));
-			},
+			// Shared with the Streak node, which reads Streak's { results: [...] } teams response
+			getTeamOptions: sharedLoadOptions.getTeamOptions,
 		},
 	};
 
@@ -185,23 +169,15 @@ export class StreakTrigger implements INodeType {
 
 				// Check if a webhook with this URL already exists
 				const scope = this.getNodeParameter('scope') as string;
-				let existingWebhooks: IDataObject[] = [];
+				let response: IDataObject | IDataObject[];
 
 				try {
 					if (scope === 'pipeline') {
 						const pipelineKey = this.getNodeParameter('pipelineKey') as string;
-						existingWebhooks = (await streakApiRequest(
-							this,
-							'GET',
-							`/pipelines/${pipelineKey}/webhooks`,
-						)) as IDataObject[];
+						response = await streakApiRequest(this, 'GET', `/pipelines/${pipelineKey}/webhooks`);
 					} else {
 						const teamKey = this.getNodeParameter('teamKey') as string;
-						existingWebhooks = (await streakApiRequest(
-							this,
-							'GET',
-							`/teams/${teamKey}/webhooks`,
-						)) as IDataObject[];
+						response = await streakApiRequest(this, 'GET', `/teams/${teamKey}/webhooks`);
 					}
 				} catch (error: unknown) {
 					if (error instanceof Error) {
@@ -210,8 +186,12 @@ export class StreakTrigger implements INodeType {
 					return false;
 				}
 
-				if (!Array.isArray(existingWebhooks)) {
-					return false;
+				// Streak returns { results: [...] }; accept a bare array too
+				let existingWebhooks: IDataObject[] = [];
+				if (Array.isArray(response)) {
+					existingWebhooks = response;
+				} else if (Array.isArray(response?.results)) {
+					existingWebhooks = response.results as IDataObject[];
 				}
 
 				const event = this.getNodeParameter('event') as string;
@@ -232,22 +212,28 @@ export class StreakTrigger implements INodeType {
 				const event = this.getNodeParameter('event') as string;
 				const scope = this.getNodeParameter('scope') as string;
 
+				const mismatch = webhookScopeMismatch(event, scope);
+				if (mismatch) {
+					throw new NodeOperationError(this.getNode(), mismatch);
+				}
+
 				const body: IDataObject = {
 					event,
 					targetUrl: webhookUrl,
 				};
 
-				if (scope === 'pipeline') {
-					body.pipelineKey = this.getNodeParameter('pipelineKey') as string;
-				} else {
-					body.teamKey = this.getNodeParameter('teamKey') as string;
-				}
+				// Streak reads the pipeline or team key from the query string, not the body
+				const query: IDataObject =
+					scope === 'pipeline'
+						? { pipelineKey: this.getNodeParameter('pipelineKey') as string }
+						: { teamKey: this.getNodeParameter('teamKey') as string };
 
 				const response = (await streakApiRequest(
 					this,
 					'POST',
 					'/webhooks',
 					body,
+					query,
 				)) as IDataObject;
 
 				if (!response?.key) {

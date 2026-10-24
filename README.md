@@ -150,30 +150,34 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 
 The **Streak Trigger** node starts workflows automatically when events occur in Streak. Webhooks can be scoped to a specific pipeline or team.
 
+Each event belongs to one scope: Contact and Org events need **Team** scope, and all other events need **Pipeline** scope. The Event list only shows events for the selected scope.
+
+Streak sends events to n8n's webhook URL, so n8n must be reachable from the internet. A trigger on `localhost` won't receive events.
+
 ### Supported Events
 
-| Event | Description |
-|-------|-------------|
-| Box Create | A new box is created |
-| Box Delete | A box is deleted |
-| Box Edit | A box's fields, notes, assignments, or name change |
-| Box Change Stage | A box moves to a different stage |
-| Box Change Pipeline | A box is transferred to a different pipeline |
-| Box New Email Address | A new email address is detected on a box |
-| Stage Create | A new stage is created |
-| Comment Create | A comment is added to a box |
-| Meeting Create | A meeting is created |
-| Meeting Update | A meeting is updated |
-| Task Create | A task is created |
-| Task Complete | A task is marked complete |
-| Task Due | A task reaches its due date |
-| Task Updated | A task is updated |
-| Contact Create | A contact is created |
-| Contact Update | A contact is updated |
-| Contact Delete | A contact is deleted |
-| Org Create | An organization is created |
-| Org Update | An organization is updated |
-| Org Delete | An organization is deleted |
+| Event | Scope | Description |
+|-------|-------|-------------|
+| Box Create | Pipeline | A new box is created |
+| Box Delete | Pipeline | A box is deleted |
+| Box Edit | Pipeline | A box's fields, notes, assignments, or name change |
+| Box Change Stage | Pipeline | A box moves to a different stage |
+| Box Change Pipeline | Pipeline | A box is transferred to a different pipeline |
+| Box New Email Address | Pipeline | A new email address is detected on a box |
+| Stage Create | Pipeline | A new stage is created |
+| Comment Create | Pipeline | A comment is added to a box |
+| Meeting Create | Pipeline | A meeting is created |
+| Meeting Update | Pipeline | A meeting is updated |
+| Task Create | Pipeline | A task is created |
+| Task Complete | Pipeline | A task is marked complete |
+| Task Due | Pipeline | A task reaches its due date |
+| Task Updated | Pipeline | A task is updated |
+| Contact Create | Team | A contact is created |
+| Contact Update | Team | A contact is updated |
+| Contact Delete | Team | A contact is deleted |
+| Org Create | Team | An organization is created |
+| Org Update | Team | An organization is updated |
+| Org Delete | Team | An organization is deleted |
 
 ## Credentials
 
