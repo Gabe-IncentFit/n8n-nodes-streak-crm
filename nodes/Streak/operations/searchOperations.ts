@@ -28,7 +28,7 @@ export async function handleSearchOperations(
 			{},
 		) as IDataObject;
 
-		if (additionalFields.page !== undefined && operation === 'searchByName') {
+		if (additionalFields.page !== undefined) {
 			qs.page = additionalFields.page;
 		}
 

@@ -40,9 +40,7 @@ const ENDPOINT_API_VERSIONS: Record<string, 'v1' | 'v2'> = {
 	'/comments/': 'v2',
 	'/meetings': 'v2',
 	'/meetings/': 'v2',
-	'/timeline': 'v2',
 	'/boxes/*/tasks': 'v2',
-	'/boxes/batch': 'v2',
 	'/boxes/*/timeline': 'v2', // Timeline for boxes uses v2
 	'/pipelines/*/boxes/batch': 'v2',
 	'/pipelines/*/boxes': 'v2', // Create box uses v2

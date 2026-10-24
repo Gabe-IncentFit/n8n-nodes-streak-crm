@@ -39,7 +39,7 @@ export const organizationProperties: INodeProperties[] = [
 			{
 				name: 'Check Existing Organizations',
 				value: 'checkExistingOrganizations',
-				description: 'Checks for existing organizations by name or domain',
+				description: 'Finds an organization by domain, and creates one if none matches',
 				action: 'Check existing organizations',
 			},
 			{
@@ -91,8 +91,24 @@ export const organizationProperties: INodeProperties[] = [
 		name: 'name',
 		type: 'string',
 		default: '',
-		required: true,
-		description: 'The name of the organization',
+		description:
+			'The name of the organization. Required unless you add Domains, in which case Streak can name it from the domain.',
+		displayOptions: {
+			show: {
+				resource: ['organization'],
+				operation: ['createOrganization'],
+			},
+		},
+	},
+
+	// Return Existing If Found (for createOrganization), sent as Streak's getIfExisting flag
+	{
+		displayName: 'Return Existing If Found',
+		name: 'getIfExisting',
+		type: 'boolean',
+		default: false,
+		description:
+			"Whether to return the organization that already has one of the Domains instead of creating another. Streak matches by domain only, so this does nothing without Domains. A matching organization is returned as it is: the other values set here aren't applied to it.",
 		displayOptions: {
 			show: {
 				resource: ['organization'],
@@ -129,7 +145,7 @@ export const organizationProperties: INodeProperties[] = [
 					multipleValues: true,
 				},
 				default: [],
-				description: 'Website domains to check for existing organizations (e.g., example.com). The Streak API only supports checking by domains, not organization names.',
+				description: 'Website domains to look up (e.g., example.com). Streak matches by domain only, not by name, and creates an organization with these domains if none matches.',
 			},
 		],
 	},
@@ -221,13 +237,6 @@ export const organizationProperties: INodeProperties[] = [
 				default: '',
 				description:
 					'Phone numbers associated with the organization. Can be a single number or multiple numbers. The Streak API replaces all existing numbers with the ones you provide (does not merge).',
-			},
-			{
-				displayName: 'Relationships',
-				name: 'relationships',
-				type: 'string',
-				default: '',
-				description: 'Relationships data for the organization (JSON string)',
 			},
 			{
 				displayName: 'Twitter Handle',
@@ -333,13 +342,6 @@ export const organizationProperties: INodeProperties[] = [
 				default: '',
 				description:
 					'Phone numbers associated with the organization. Can be a single number or multiple numbers. The Streak API replaces all existing numbers with the ones you provide (does not merge).',
-			},
-			{
-				displayName: 'Relationships',
-				name: 'relationships',
-				type: 'string',
-				default: '',
-				description: 'New relationships data for the organization (JSON string)',
 			},
 			{
 				displayName: 'Twitter Handle',

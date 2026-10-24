@@ -441,11 +441,10 @@ export const listSearch = {
 			const pipelineKey = extractParamValue(this.getCurrentNodeParameter('pipelineKey'));
 			if (!pipelineKey) return { results: [] };
 
-			const boxes = (await streakApiRequest(
-				this,
-				'GET',
-				`/pipelines/${pipelineKey}/boxes`,
-			)) as Array<{ key: string; name: string }>;
+			// This goes to v2, which wraps the boxes as { results: [...] }
+			const boxes = parseBoxesResponse(
+				await streakApiRequest(this, 'GET', `/pipelines/${pipelineKey}/boxes`),
+			);
 
 			let filteredBoxes = boxes;
 			if (filter) {

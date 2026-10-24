@@ -51,12 +51,6 @@ export async function handleFileOperations(
 		validateParameters.call(this, { fileKey }, ['fileKey'], itemIndex);
 
 		return await streakApiRequest(this, 'GET', `/files/${fileKey}`, undefined, undefined, 'v1');
-	} else if (operation === 'getFileContents') {
-		const fileKey = this.getNodeParameter('fileKey', itemIndex) as string;
-
-		validateParameters.call(this, { fileKey }, ['fileKey'], itemIndex);
-
-		return await streakApiRequest(this, 'GET', `/files/${fileKey}/contents`, undefined, undefined, 'v1');
 	} else if (operation === 'addFileToBox') {
 		const boxKeyParam = this.getNodeParameter('boxKey', itemIndex) as
 			| string

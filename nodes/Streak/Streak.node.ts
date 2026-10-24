@@ -27,6 +27,7 @@ import { handleCommentOperations } from './operations/commentOperations';
 import { handleMeetingOperations } from './operations/meetingOperations';
 import { handleThreadOperations } from './operations/threadOperations';
 import { handleFileOperations } from './operations/fileOperations';
+import { getFileContents } from './operations/fileContents';
 import { handleNewsfeedOperations } from './operations/newsfeedOperations';
 import { handleSnippetOperations } from './operations/snippetOperations';
 import { handleSearchOperations } from './operations/searchOperations';
@@ -76,6 +77,13 @@ export class Streak implements INodeType {
 				const resource = this.getNodeParameter('resource', itemIndex) as string;
 				const operation = this.getNodeParameter('operation', itemIndex) as string;
 				let responseData: IDataObject | IDataObject[];
+
+				// File contents come back as binary data, not JSON
+				if (resource === 'file' && operation === 'getFileContents') {
+					const item = await getFileContents.call(this, itemIndex);
+					returnData.push({ ...item, pairedItem: { item: itemIndex } });
+					continue;
+				}
 
 				// Route to appropriate operation handler based on resource
 				if (resource === 'user') {

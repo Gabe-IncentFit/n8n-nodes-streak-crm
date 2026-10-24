@@ -1,6 +1,16 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
 import { streakApiRequest, streakApiFormRequest, validateParameters } from './utils';
 
+import { getFieldDef, toFieldValue, StreakFieldDef } from './fieldHelpers';
+
+/**
+ * Read a "multiple values" string parameter as a list of non-empty strings.
+ */
+function toStringList(value: unknown): string[] {
+	const list = Array.isArray(value) ? value : value === undefined || value === '' ? [] : [value];
+	return list.map((v) => String(v).trim()).filter(Boolean);
+}
+
 /**
  * Handle field-related operations for the Streak API
  */
@@ -44,11 +54,6 @@ export async function handleFieldOperations(
 			typeof pipelineKeyParam === 'string' ? pipelineKeyParam : pipelineKeyParam.value;
 		const fieldName = this.getNodeParameter('fieldName', itemIndex) as string;
 		const fieldType = this.getNodeParameter('fieldType', itemIndex) as string;
-		const additionalFields = this.getNodeParameter(
-			'additionalFields',
-			itemIndex,
-			{},
-		) as IDataObject;
 
 		validateParameters.call(
 			this,
@@ -57,40 +62,47 @@ export async function handleFieldOperations(
 			itemIndex,
 		);
 
+		// Streak's create call takes only a name and a type. It ignores anything else,
+		// so a dropdown's options are set by an update right after the field exists.
 		const fieldParams: IDataObject = {
 			name: fieldName,
 			type: fieldType,
 		};
 
-		if (additionalFields.description) {
-			fieldParams.description = additionalFields.description;
-		}
-
-		if (additionalFields.keyName) {
-			fieldParams.keyName = additionalFields.keyName;
-		}
-
-		// Handle field-type specific properties
+		let dropdownValues: string[] = [];
 		if (fieldType === 'DROPDOWN') {
-			if (
-				!additionalFields.enumValues ||
-				(Array.isArray(additionalFields.enumValues) && additionalFields.enumValues.length === 0)
-			) {
+			dropdownValues = toStringList(this.getNodeParameter('enumValues', itemIndex, []));
+			if (dropdownValues.length === 0) {
 				throw new NodeOperationError(
 					this.getNode(),
 					'Dropdown Values are required for DROPDOWN field type',
 					{ itemIndex },
 				);
 			}
-			fieldParams.enumValues = additionalFields.enumValues;
 		}
 
-		return await streakApiFormRequest(
+		const field = (await streakApiFormRequest(
 			this,
 			'PUT',
 			`/pipelines/${pipelineKey}/fields`,
 			fieldParams,
-		);
+		)) as IDataObject;
+
+		if (dropdownValues.length === 0) {
+			return field;
+		}
+
+		if (!field?.key) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Streak created the field but returned no key, so its Dropdown Values could not be set',
+				{ itemIndex },
+			);
+		}
+
+		return await streakApiRequest(this, 'POST', `/pipelines/${pipelineKey}/fields/${field.key}`, {
+			dropdownSettings: { items: dropdownValues.map((name) => ({ name })) },
+		});
 	} else if (operation === 'updateField') {
 		const pipelineKeyParam = this.getNodeParameter('pipelineKey', itemIndex) as
 			| string
@@ -107,7 +119,39 @@ export async function handleFieldOperations(
 			itemIndex,
 		);
 
-		if (Object.keys(updateFields).length === 0) {
+		const body: IDataObject = {};
+
+		if (updateFields.name) {
+			body.name = updateFields.name;
+		}
+
+		if (updateFields.enumValues !== undefined) {
+			const field = (await streakApiRequest(
+				this,
+				'GET',
+				`/pipelines/${pipelineKey}/fields/${fieldKey}`,
+			)) as unknown as StreakFieldDef;
+
+			if (field?.type !== 'DROPDOWN') {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Dropdown Values only apply to dropdown fields',
+					{ itemIndex },
+				);
+			}
+
+			// Streak replaces the options with this list. An option listed under its current
+			// name keeps its key, so boxes that already use it keep their value.
+			const existing = field.dropdownSettings?.items || [];
+			body.dropdownSettings = {
+				items: toStringList(updateFields.enumValues).map((name) => {
+					const match = existing.find((item) => item.name.toLowerCase() === name.toLowerCase());
+					return match ? { key: match.key, name } : { name };
+				}),
+			};
+		}
+
+		if (Object.keys(body).length === 0) {
 			throw new NodeOperationError(
 				this.getNode(),
 				'At least one field to update must be specified',
@@ -119,7 +163,7 @@ export async function handleFieldOperations(
 			this,
 			'POST',
 			`/pipelines/${pipelineKey}/fields/${fieldKey}`,
-			updateFields,
+			body,
 		);
 	} else if (operation === 'deleteField') {
 		const pipelineKeyParam = this.getNodeParameter('pipelineKey', itemIndex) as
@@ -175,11 +219,18 @@ export async function handleFieldOperations(
 
 		validateParameters.call(this, { boxKey, fieldKey }, ['boxKey', 'fieldKey'], itemIndex);
 
+		// Text needs converting for typed fields (checkbox, tag, dropdown, date), which takes
+		// the field's definition. A value that's already typed, from an expression, is sent as is.
+		const value =
+			typeof fieldValue === 'string'
+				? toFieldValue(this, await getFieldDef(this, boxKey, fieldKey), fieldValue, itemIndex)
+				: fieldValue;
+
 		return await streakApiRequest(
 			this,
 			'POST',
 			`/boxes/${encodeURIComponent(boxKey)}/fields/${encodeURIComponent(fieldKey)}`,
-			{ value: fieldValue },
+			{ value } as IDataObject,
 		);
 	}
 

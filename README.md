@@ -52,7 +52,7 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 - **Create Pipeline** - Create a new pipeline with customizable properties
 - **Update Pipeline** - Update properties of an existing pipeline
 - **Delete Pipeline** - Remove a pipeline
-- **Move Boxes Between Pipelines** - Move multiple boxes (deals) between pipelines in batch
+- **Move Boxes Between Pipelines** - Move multiple boxes (deals) between pipelines in batch. Streak gives each moved box a new key, and the old key stops working, so use the keys in the output
 
 ### Box Operations
 - **List Boxes in Pipeline** - Get all boxes (deals) in a specific pipeline
@@ -78,7 +78,7 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 - **Delete Field** - Remove a field from a pipeline
 - **List Field Values** - Get all field values for a box
 - **Get Field Value** - Retrieve a specific field value
-- **Update Field Value** - Update a field value for a box
+- **Update Field Value** - Update a field value for a box. Text is converted to what the field needs: true or false for a checkbox, tag names or keys (separated by commas) for a tag field, an option name or key for a dropdown, and a date or epoch milliseconds for a date
 
 ### Contact Operations
 - **Get Contact** - Retrieve a specific contact by key
@@ -88,8 +88,8 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 
 ### Organization Operations
 - **Get Organization** - Retrieve a specific organization by key
-- **Create Organization** - Create a new organization
-- **Check Existing Organizations** - Search for existing organizations by name or domain
+- **Create Organization** - Create a new organization. Turn on **Return Existing If Found** to get the organization that already has one of the domains instead of a duplicate
+- **Check Existing Organizations** - Find an organization by domain. If none matches, Streak creates one with those domains
 - **Update Organization** - Update properties of an existing organization
 - **Delete Organization** - Remove an organization
 
@@ -122,7 +122,7 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 ### File Operations
 - **List Files in Box** - Get all files attached to a box
 - **Get File Metadata** - Retrieve a specific file's metadata by key
-- **Get File Contents** - Retrieve a file's contents (only for files of type `GMAIL_API`)
+- **Get File Contents** - Download a file as binary data, in the field set by **Put Output File in Field** (default `data`). Only for files of type `GMAIL_API`
 - **Add File to Box** - Attach one or more Google Drive files to a box in a single request
 
 ### Newsfeed Operations

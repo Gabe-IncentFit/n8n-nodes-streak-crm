@@ -13,15 +13,20 @@ export async function handleWebhookOperations(
 	if (operation === 'listWebhooks') {
 		const scope = this.getNodeParameter('scope', itemIndex) as string;
 
+		let endpoint: string;
 		if (scope === 'pipeline') {
 			const pipelineKey = this.getNodeParameter('pipelineKey', itemIndex) as string;
 			validateParameters.call(this, { pipelineKey }, ['pipelineKey'], itemIndex);
-			return await streakApiRequest(this, 'GET', `/pipelines/${pipelineKey}/webhooks`);
+			endpoint = `/pipelines/${pipelineKey}/webhooks`;
 		} else {
 			const teamKey = this.getNodeParameter('teamKey', itemIndex) as string;
 			validateParameters.call(this, { teamKey }, ['teamKey'], itemIndex);
-			return await streakApiRequest(this, 'GET', `/teams/${teamKey}/webhooks`);
+			endpoint = `/teams/${teamKey}/webhooks`;
 		}
+
+		// Streak wraps the list as { results: [...] }; output one item per webhook
+		const response = (await streakApiRequest(this, 'GET', endpoint)) as IDataObject;
+		return Array.isArray(response?.results) ? (response.results as IDataObject[]) : response;
 	} else if (operation === 'getWebhook') {
 		const webhookKey = this.getNodeParameter('webhookKey', itemIndex) as string;
 

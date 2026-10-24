@@ -20,18 +20,31 @@ export async function handleOrganizationOperations(
 	} else if (operation === 'createOrganization') {
 		// Create Organization operation
 		const teamKey = this.getNodeParameter('teamKey', itemIndex) as string;
-		const name = this.getNodeParameter('name', itemIndex) as string;
+		const name = this.getNodeParameter('name', itemIndex, '') as string;
+		const getIfExisting = this.getNodeParameter('getIfExisting', itemIndex, false) as boolean;
 		const additionalFields = this.getNodeParameter(
 			'additionalFields',
 			itemIndex,
 			{},
 		) as IDataObject;
 
-		validateParameters.call(this, { teamKey, name }, ['teamKey', 'name'], itemIndex);
+		validateParameters.call(this, { teamKey }, ['teamKey'], itemIndex);
 
-		const body: IDataObject = {
-			name,
-		};
+		// Streak creates an organization from a name or a domain; without a name it names it itself
+		const hasDomains = Array.isArray(additionalFields.domains) && additionalFields.domains.length > 0;
+		if (!name && !hasDomains) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Set a Name or at least one Domain to create an organization',
+				{ itemIndex },
+			);
+		}
+
+		const body: IDataObject = {};
+
+		if (name) {
+			body.name = name;
+		}
 
 		if (additionalFields.addresses) {
 			// Addresses field must be an array - convert string to array if needed
@@ -56,12 +69,13 @@ export async function handleOrganizationOperations(
 			body.industry = additionalFields.industry;
 		}
 
+		// Streak spells these linkedinHandle and logoURL, and silently drops other spellings
 		if (additionalFields.linkedInHandle) {
-			body.linkedInHandle = additionalFields.linkedInHandle;
+			body.linkedinHandle = additionalFields.linkedInHandle;
 		}
 
 		if (additionalFields.logoUrl) {
-			body.logoUrl = additionalFields.logoUrl;
+			body.logoURL = additionalFields.logoUrl;
 		}
 
 		if (additionalFields.other) {
@@ -75,15 +89,15 @@ export async function handleOrganizationOperations(
 				: [additionalFields.phoneNumbers];
 		}
 
-		if (additionalFields.relationships) {
-			body.relationships = additionalFields.relationships;
-		}
-
 		if (additionalFields.twitterHandle) {
 			body.twitterHandle = additionalFields.twitterHandle;
 		}
 
-		return await streakApiRequest(this, 'POST', `/teams/${teamKey}/organizations`, body);
+		// With getIfExisting, Streak returns an organization that has one of the domains instead of
+		// creating a duplicate. Without it, Streak always creates, even if the domain is taken.
+		const query = getIfExisting ? { getIfExisting: true } : undefined;
+
+		return await streakApiRequest(this, 'POST', `/teams/${teamKey}/organizations`, body, query);
 	} else if (operation === 'checkExistingOrganizations') {
 		// Check Existing Organizations operation
 		const teamKey = this.getNodeParameter('teamKey', itemIndex) as string;
@@ -116,14 +130,6 @@ export async function handleOrganizationOperations(
 
 		validateParameters.call(this, { organizationKey }, ['organizationKey'], itemIndex);
 
-		if (Object.keys(updateFields).length === 0) {
-			throw new NodeOperationError(
-				this.getNode(),
-				'At least one field to update must be specified',
-				{ itemIndex },
-			);
-		}
-
 		const body: IDataObject = {};
 
 		if (updateFields.addresses) {
@@ -149,12 +155,13 @@ export async function handleOrganizationOperations(
 			body.industry = updateFields.industry;
 		}
 
+		// Streak spells these linkedinHandle and logoURL, and silently drops other spellings
 		if (updateFields.linkedInHandle) {
-			body.linkedInHandle = updateFields.linkedInHandle;
+			body.linkedinHandle = updateFields.linkedInHandle;
 		}
 
 		if (updateFields.logoUrl) {
-			body.logoUrl = updateFields.logoUrl;
+			body.logoURL = updateFields.logoUrl;
 		}
 
 		if (updateFields.name) {
@@ -172,12 +179,16 @@ export async function handleOrganizationOperations(
 				: [updateFields.phoneNumbers];
 		}
 
-		if (updateFields.relationships) {
-			body.relationships = updateFields.relationships;
-		}
-
 		if (updateFields.twitterHandle) {
 			body.twitterHandle = updateFields.twitterHandle;
+		}
+
+		if (Object.keys(body).length === 0) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'At least one field to update must be specified',
+				{ itemIndex },
+			);
 		}
 
 		return await streakApiRequest(this, 'POST', `/organizations/${organizationKey}`, body);

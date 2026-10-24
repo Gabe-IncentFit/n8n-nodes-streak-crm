@@ -41,7 +41,8 @@ export const pipelineProperties: INodeProperties[] = [
 			{
 				name: 'Move Boxes (Batch)',
 				value: 'moveBoxesBatch',
-				description: 'Moves multiple boxes to a different pipeline',
+				description:
+					'Moves boxes to a different pipeline. Streak gives each moved box a new key, so use the keys in the output.',
 				action: 'Move boxes between pipelines',
 			},
 			{

@@ -146,7 +146,8 @@ export const stageProperties: INodeProperties[] = [
 				name: 'color',
 				type: 'color',
 				default: '',
-				description: 'Color code for the stage (e.g., #FF0000)',
+				description:
+					"The stage's background color (e.g., #FF0000). Its text is set to black or white, whichever reads better.",
 			},
 		],
 	},
@@ -177,7 +178,8 @@ export const stageProperties: INodeProperties[] = [
 				name: 'color',
 				type: 'color',
 				default: '',
-				description: 'New color for the stage (e.g., #00FF00)',
+				description:
+					"New background color for the stage (e.g., #00FF00). Its text is set to black or white, whichever reads better.",
 			},
 		],
 	},

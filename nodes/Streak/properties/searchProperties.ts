@@ -81,7 +81,7 @@ export const searchProperties: INodeProperties[] = [
 				name: 'page',
 				type: 'number',
 				default: 0,
-				description: 'Page number for paginated results (up to 1000 boxes per page). Only applies to Search by Name.',
+				description: 'Which page of results to fetch, starting at 0',
 			},
 			{
 				displayName: 'Pipeline Key',

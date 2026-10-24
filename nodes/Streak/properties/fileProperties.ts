@@ -24,7 +24,7 @@ export const fileProperties: INodeProperties[] = [
 				name: 'Get File Contents',
 				value: 'getFileContents',
 				description:
-					'Gets the contents of a file (only works for GMAIL_API file types)',
+					'Downloads a file as binary data (only works for GMAIL_API file types)',
 				action: 'Get file contents',
 			},
 			{
@@ -54,6 +54,22 @@ export const fileProperties: INodeProperties[] = [
 			show: {
 				resource: ['file'],
 				operation: ['getFile', 'getFileContents'],
+			},
+		},
+	},
+
+	// Binary output field (for getFileContents)
+	{
+		displayName: 'Put Output File in Field',
+		name: 'binaryPropertyName',
+		type: 'string',
+		default: 'data',
+		required: true,
+		hint: 'The name of the output binary field to put the file in',
+		displayOptions: {
+			show: {
+				resource: ['file'],
+				operation: ['getFileContents'],
 			},
 		},
 	},

@@ -1,41 +1,68 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
 import { streakApiRequest, validateParameters, handlePagination } from './utils';
 
-interface StreakFieldDef {
-	key: string;
-	name: string;
-	type: string;
-	dropdownSettings?: { items: Array<{ key: string; name: string }> };
-	tagSettings?: { tags: Array<{ key: string; tag: string }> };
+import { resolveDropdownValue } from './fieldHelpers';
+
+/**
+ * Collect the keys of the boxes a search matches. Search pages its results, so with Return All
+ * this keeps asking for the next page until one adds no new boxes. Stopping on "nothing new"
+ * rather than an empty page also ends the loop if Streak ever ignores `page`.
+ */
+async function searchBoxKeys(
+	context: IExecuteFunctions,
+	searchParams: IDataObject,
+	returnAll: boolean,
+): Promise<string[]> {
+	const keys: string[] = [];
+
+	for (let page = 0; ; page++) {
+		const response = (await streakApiRequest(
+			context,
+			'GET',
+			'/search',
+			undefined,
+			{ ...searchParams, page },
+			'v1',
+		)) as IDataObject;
+		const boxes = ((response?.results as IDataObject)?.boxes as IDataObject[]) || [];
+		const fresh = boxes
+			.map((box) => (box.boxKey ?? box.key) as string)
+			.filter((key) => key && !keys.includes(key));
+		keys.push(...fresh);
+
+		if (!returnAll || fresh.length === 0) {
+			return keys;
+		}
+	}
 }
 
-async function getFieldDef(
+/**
+ * Search results are slim (no `key`, `fields`, notes or timestamps), so fetch the full boxes
+ * with the batch endpoint, 100 at a time, and return them in search order.
+ */
+async function getBoxesByKey(
 	context: IExecuteFunctions,
-	boxKey: string,
-	fieldKey: string,
-): Promise<StreakFieldDef | undefined> {
-	const box = (await streakApiRequest(context, 'GET', `/boxes/${boxKey}`)) as { pipelineKey: string };
-	if (!box?.pipelineKey) return undefined;
-	const fields = (await streakApiRequest(
-		context, 'GET', `/pipelines/${box.pipelineKey}/fields`,
-	)) as unknown as StreakFieldDef[];
-	return fields.find((f) => f.key === fieldKey);
-}
+	pipelineKey: string,
+	boxKeys: string[],
+): Promise<IDataObject[]> {
+	const byKey = new Map<string, IDataObject>();
 
-async function resolveDropdownValue(
-	context: IExecuteFunctions,
-	boxKey: string,
-	fieldKey: string,
-	value: string,
-): Promise<string> {
-	const field = await getFieldDef(context, boxKey, fieldKey);
-	const items = field?.dropdownSettings?.items || [];
-	// If value already matches a key, return as-is
-	const byKey = items.find((i) => i.key === value);
-	if (byKey) return value;
-	// Otherwise try to match by display name
-	const byName = items.find((i) => i.name.toLowerCase() === value.toLowerCase());
-	return byName ? byName.key : value;
+	for (let i = 0; i < boxKeys.length; i += 100) {
+		const response = (await streakApiRequest(
+			context,
+			'POST',
+			`/pipelines/${pipelineKey}/boxes/batch/get`,
+			boxKeys.slice(i, i + 100) as unknown as IDataObject[],
+			undefined,
+			'v2',
+		)) as IDataObject | IDataObject[];
+		const boxes = Array.isArray(response) ? response : ((response?.results as IDataObject[]) || []);
+		for (const box of boxes) {
+			byKey.set((box.key ?? box.boxKey) as string, box);
+		}
+	}
+
+	return boxKeys.map((key) => byKey.get(key)).filter((box): box is IDataObject => !!box);
 }
 
 
@@ -81,36 +108,19 @@ export async function handleBoxOperations(
 				searchParams.stageKey = stageKeyFilter;
 			}
 
-			const searchResponse = (await streakApiRequest(
-				this,
-				'GET',
-				'/search',
-				undefined,
-				searchParams,
-				'v1',
-			)) as IDataObject;
+			let boxKeys = await searchBoxKeys(this, searchParams, returnAll);
 
-			// Extract boxes from search response
-			let results: IDataObject[] = [];
-			if (
-				searchResponse?.results &&
-				(searchResponse.results as IDataObject).boxes &&
-				Array.isArray((searchResponse.results as IDataObject).boxes)
-			) {
-				results = (searchResponse.results as IDataObject).boxes as IDataObject[];
+			// Apply limit if returnAll is false
+			if (!returnAll && limit) {
+				boxKeys = boxKeys.slice(0, limit);
 			}
 
 			// Handle empty search results consistently with normal listing
-			if (!results || results.length === 0) {
+			if (boxKeys.length === 0) {
 				return [];
 			}
 
-			// Apply limit if returnAll is false
-			if (!returnAll && limit && results.length > limit) {
-				return results.slice(0, limit);
-			}
-
-			return results;
+			return await getBoxesByKey(this, pipelineKey, boxKeys);
 		} else {
 			// No search query - use regular list boxes endpoint (v1 supports page/limit/sortBy)
 			const queryParams: IDataObject = {};

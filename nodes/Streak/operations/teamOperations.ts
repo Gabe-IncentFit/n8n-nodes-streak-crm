@@ -11,8 +11,9 @@ export async function handleTeamOperations(
 ): Promise<IDataObject | IDataObject[]> {
 	// Handle team operations
 	if (operation === 'getMyTeams') {
-		// Get My Teams operation
-		return await streakApiRequest(this, 'GET', '/users/me/teams');
+		// Get My Teams operation. Streak wraps the list as { results: [...] }; output one item per team.
+		const response = (await streakApiRequest(this, 'GET', '/users/me/teams')) as IDataObject;
+		return Array.isArray(response?.results) ? (response.results as IDataObject[]) : response;
 	} else if (operation === 'getTeam') {
 		// Get Team operation
 		const teamKey = this.getNodeParameter('teamKey', itemIndex) as string;

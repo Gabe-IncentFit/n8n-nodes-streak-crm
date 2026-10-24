@@ -219,6 +219,11 @@ export const fieldProperties: INodeProperties[] = [
 				description: 'Formula field for calculations',
 			},
 			{
+				name: 'Person',
+				value: 'PERSON',
+				description: 'Person field',
+			},
+			{
 				name: 'Tag',
 				value: 'TAG',
 				description: 'Tag field for labels',
@@ -227,6 +232,11 @@ export const fieldProperties: INodeProperties[] = [
 				name: 'Team Contact',
 				value: 'TEAM_CONTACT',
 				description: 'Team contact field',
+			},
+			{
+				name: 'Team Organization',
+				value: 'TEAM_ORGANIZATION',
+				description: 'Team organization field',
 			},
 			{
 				name: 'Text Input',
@@ -245,50 +255,24 @@ export const fieldProperties: INodeProperties[] = [
 		},
 	},
 
-	// Additional Fields (for createField)
+	// Dropdown Values (for createField with a dropdown type)
 	{
-		displayName: 'Additional Fields',
-		name: 'additionalFields',
-		type: 'collection',
-		placeholder: 'Add Field',
-		default: {},
+		displayName: 'Dropdown Values',
+		name: 'enumValues',
+		type: 'string',
+		typeOptions: {
+			multipleValues: true,
+		},
+		default: '',
+		required: true,
+		description: "The dropdown's options, one per value",
 		displayOptions: {
 			show: {
 				resource: ['field'],
 				operation: ['createField'],
+				fieldType: ['DROPDOWN'],
 			},
 		},
-		options: [
-			{
-				displayName: 'Description',
-				name: 'description',
-				type: 'string',
-				default: '',
-				description: 'Description of the field',
-			},
-			{
-				displayName: 'Key Name',
-				name: 'keyName',
-				type: 'string',
-				default: '',
-				description: 'Key name for the field (use only if you need a specific key)',
-			},
-			{
-				displayName: 'Dropdown Values',
-				name: 'enumValues',
-				type: 'string',
-				typeOptions: {
-					multipleValues: true,
-				},
-				default: '',
-				description: 'Values for dropdown field type (required for dropdown fields)',
-				displayOptions: {
-					show: {
-						'/fieldType': ['DROPDOWN_ENUMERATION'],
-					},
-				},
-			},
-		],
 	},
 
 	// Update Fields (for updateField)
@@ -313,13 +297,6 @@ export const fieldProperties: INodeProperties[] = [
 				description: 'New name for the field',
 			},
 			{
-				displayName: 'Description',
-				name: 'description',
-				type: 'string',
-				default: '',
-				description: 'New description for the field',
-			},
-			{
 				displayName: 'Dropdown Values',
 				name: 'enumValues',
 				type: 'string',
@@ -327,7 +304,8 @@ export const fieldProperties: INodeProperties[] = [
 					multipleValues: true,
 				},
 				default: '',
-				description: 'New values for dropdown field type',
+				description:
+					"Replaces a dropdown field's options. An option listed under its current name keeps its key, so boxes that use it keep their value.",
 			},
 		],
 	},
@@ -339,7 +317,8 @@ export const fieldProperties: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		description: 'The value to set for the field',
+		description:
+			'The value to set. Checkbox: true or false. Tag: tag names or keys, separated by commas. Dropdown: the option name or key. Date: a date or epoch milliseconds.',
 		displayOptions: {
 			show: {
 				resource: ['field'],
