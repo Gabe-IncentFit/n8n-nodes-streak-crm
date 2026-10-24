@@ -17,7 +17,18 @@ export async function handleThreadOperations(
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		return await fetchAllResults(this, `/boxes/${boxKey}/threads`);
+		const endpoint = `/boxes/${boxKey}/threads`;
+		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
+
+		// Without a limit, Streak returns every thread in one response
+		if (returnAll) {
+			return await fetchAllResults(this, endpoint);
+		}
+
+		// Streak honors limit here, but page 1 comes back empty, so there's no Page option
+		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
+
+		return await streakApiRequest(this, 'GET', endpoint, undefined, { limit });
 	} else if (operation === 'getThread') {
 		const threadKey = this.getNodeParameter('threadKey', itemIndex) as string;
 

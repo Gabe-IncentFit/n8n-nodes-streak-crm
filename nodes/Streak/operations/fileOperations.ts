@@ -1,5 +1,11 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, validateParameters, fetchAllResults } from './utils';
+import {
+	streakApiRequest,
+	validateParameters,
+	fetchAllResults,
+	getPageParameter,
+	handlePagination,
+} from './utils';
 
 /**
  * Read Drive file IDs from text separated by commas or new lines, or from an array
@@ -35,7 +41,19 @@ export async function handleFileOperations(
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		return await fetchAllResults(this, `/boxes/${boxKey}/files`, undefined, 'v1');
+		const endpoint = `/boxes/${boxKey}/files`;
+		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
+
+		// Without page or limit, Streak returns every file in one response
+		if (returnAll) {
+			return await fetchAllResults(this, endpoint, undefined, 'v1');
+		}
+
+		// v1 accepts page and limit, but its response is a bare array with no hasNextPage
+		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
+		const page = getPageParameter.call(this, itemIndex);
+
+		return await handlePagination(this, endpoint, false, limit, {}, 'v1', page);
 	} else if (operation === 'getFile') {
 		const fileKey = this.getNodeParameter('fileKey', itemIndex) as string;
 

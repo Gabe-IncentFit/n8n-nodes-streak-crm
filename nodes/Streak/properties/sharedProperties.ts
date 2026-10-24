@@ -11,7 +11,7 @@ export const sharedProperties: INodeProperties[] = [
 		description: 'Whether to return all results or only up to a given limit',
 		displayOptions: {
 			show: {
-				resource: ['pipeline', 'box', 'field', 'meeting', 'task'],
+				resource: ['pipeline', 'box', 'field', 'meeting', 'task', 'snippet', 'newsfeed', 'file', 'thread'],
 				operation: [
 					'listAllPipelines',
 					'listBoxes',
@@ -19,6 +19,12 @@ export const sharedProperties: INodeProperties[] = [
 					'getTimeline',
 					'listMeetingsInBox',
 					'getTasksInBox',
+					'listSnippets',
+					'getPipelineNewsfeed',
+					'getBoxNewsfeed',
+					'getAllNewsfeed',
+					'listFilesInBox',
+					'listThreadsInBox',
 				],
 			},
 		},
@@ -34,7 +40,7 @@ export const sharedProperties: INodeProperties[] = [
 		},
 		displayOptions: {
 			show: {
-				resource: ['pipeline', 'box', 'field', 'meeting', 'task'],
+				resource: ['pipeline', 'box', 'field', 'meeting', 'task', 'snippet', 'newsfeed', 'file', 'thread'],
 				operation: [
 					'listAllPipelines',
 					'listBoxes',
@@ -42,6 +48,12 @@ export const sharedProperties: INodeProperties[] = [
 					'getTimeline',
 					'listMeetingsInBox',
 					'getTasksInBox',
+					'listSnippets',
+					'getPipelineNewsfeed',
+					'getBoxNewsfeed',
+					'getAllNewsfeed',
+					'listFilesInBox',
+					'listThreadsInBox',
 				],
 				returnAll: [false],
 			},
@@ -61,8 +73,19 @@ export const sharedProperties: INodeProperties[] = [
 		},
 		displayOptions: {
 			show: {
-				resource: ['pipeline', 'box', 'field', 'task', 'meeting'],
-				operation: ['listAllPipelines', 'listBoxes', 'listFieldValues', 'getTasksInBox', 'listMeetingsInBox'],
+				resource: ['pipeline', 'box', 'field', 'task', 'meeting', 'snippet', 'file', 'newsfeed'],
+				operation: [
+					'listAllPipelines',
+					'listBoxes',
+					'listFieldValues',
+					'getTasksInBox',
+					'listMeetingsInBox',
+					'listSnippets',
+					'listFilesInBox',
+					'getPipelineNewsfeed',
+					'getBoxNewsfeed',
+					'getAllNewsfeed',
+				],
 				returnAll: [false],
 			},
 		},

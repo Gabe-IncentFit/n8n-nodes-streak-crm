@@ -229,7 +229,7 @@ This is a simple workflow to create a pipeline and then add a box to it:
 
 ### Fetching one page at a time
 
-**List All Pipelines**, **List Boxes in Pipeline**, **List Field Values**, **Get Tasks in Box** and **List Meetings in Box** have a **Page** option, shown when **Return All** is off. Pages start at 0: page 0 is the first **Limit** results, page 1 the next **Limit**, and so on. Page defaults to 0, so existing workflows keep fetching the first page.
+**List All Pipelines**, **List Boxes in Pipeline**, **List Field Values**, **Get Tasks in Box**, **List Meetings in Box**, **List Snippets**, **List Files in Box** and the three **Newsfeed** operations have a **Page** option, shown when **Return All** is off. Pages start at 0: page 0 is the first **Limit** results, page 1 the next **Limit**, and so on. Page defaults to 0, so existing workflows keep fetching the first page.
 
 - Streak returns at most 1000 boxes or tasks per page, so keep **Limit** at 1000 or below for those. Streak doesn't document a maximum for the others.
 - On List Boxes, **Sort By** and **Stage** apply to every page. Both sort orders are newest first.
@@ -237,6 +237,10 @@ This is a simple workflow to create a pipeline and then add a box to it:
 - Streak removes items you can't access after it builds each page, so a page can come back short, or even empty, before the end.
 
 **Get Box Timeline** has Return All and Limit but no Page, because Streak pages the timeline by time rather than page number. To step back through it, set **Start Timestamp** to the oldest entry you've already fetched.
+
+**List Threads in Box** also has Return All and Limit but no Page, because Streak returns an empty page 1 for threads.
+
+**Get All Newsfeed** returns at most the 100 newest events, even with Return All on, and pages past the first 100 come back empty, because Streak keeps only 100 events for that feed.
 
 The other list operations have no Return All, Limit or Page. Streak returns all of their results in one response, so they always output everything.
 
