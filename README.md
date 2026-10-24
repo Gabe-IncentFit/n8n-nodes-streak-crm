@@ -229,9 +229,9 @@ This is a simple workflow to create a pipeline and then add a box to it:
 
 ### Fetching one page at a time
 
-**List Boxes in Pipeline**, **Get Tasks in Box** and **List Meetings in Box** have a **Page** option, shown when **Return All** is off. Pages start at 0: page 0 is the first **Limit** results, page 1 the next **Limit**, and so on. Page defaults to 0, so existing workflows behave as before.
+**List All Pipelines**, **List Boxes in Pipeline**, **List Field Values**, **Get Tasks in Box** and **List Meetings in Box** have a **Page** option, shown when **Return All** is off. Pages start at 0: page 0 is the first **Limit** results, page 1 the next **Limit**, and so on. Page defaults to 0, so existing workflows keep fetching the first page.
 
-- Streak returns at most 1000 boxes or tasks per page, so keep **Limit** at 1000 or below for those. Streak doesn't document a maximum for meetings.
+- Streak returns at most 1000 boxes or tasks per page, so keep **Limit** at 1000 or below for those. Streak doesn't document a maximum for the others.
 - On List Boxes, **Sort By** and **Stage** apply to every page. Both sort orders are newest first.
 - On List Boxes, Page only works without a **Search Query**. With a search query, any page other than 0 is rejected.
 - Streak removes items you can't access after it builds each page, so a page can come back short, or even empty, before the end.

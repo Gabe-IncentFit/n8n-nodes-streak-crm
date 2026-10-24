@@ -11,9 +11,11 @@ export const sharedProperties: INodeProperties[] = [
 		description: 'Whether to return all results or only up to a given limit',
 		displayOptions: {
 			show: {
-				resource: ['box', 'meeting', 'task'],
+				resource: ['pipeline', 'box', 'field', 'meeting', 'task'],
 				operation: [
+					'listAllPipelines',
 					'listBoxes',
+					'listFieldValues',
 					'getTimeline',
 					'listMeetingsInBox',
 					'getTasksInBox',
@@ -32,9 +34,11 @@ export const sharedProperties: INodeProperties[] = [
 		},
 		displayOptions: {
 			show: {
-				resource: ['box', 'meeting', 'task'],
+				resource: ['pipeline', 'box', 'field', 'meeting', 'task'],
 				operation: [
+					'listAllPipelines',
 					'listBoxes',
+					'listFieldValues',
 					'getTimeline',
 					'listMeetingsInBox',
 					'getTasksInBox',
@@ -50,15 +54,15 @@ export const sharedProperties: INodeProperties[] = [
 		type: 'number',
 		default: 0,
 		description:
-			'Which page of results to fetch, starting at 0. Each page holds up to Limit results, so add 1 to get the next page. Streak returns at most 1000 boxes or tasks per page and documents no maximum for meetings. List Boxes only supports page 0 when Search Query is set.',
+			'Which page of results to fetch, starting at 0. Each page holds up to Limit results, so add 1 to get the next page. Streak returns at most 1000 boxes or tasks per page and documents no maximum for the others. List Boxes only supports page 0 when Search Query is set.',
 		typeOptions: {
 			minValue: 0,
 			numberPrecision: 0,
 		},
 		displayOptions: {
 			show: {
-				resource: ['box', 'task', 'meeting'],
-				operation: ['listBoxes', 'getTasksInBox', 'listMeetingsInBox'],
+				resource: ['pipeline', 'box', 'field', 'task', 'meeting'],
+				operation: ['listAllPipelines', 'listBoxes', 'listFieldValues', 'getTasksInBox', 'listMeetingsInBox'],
 				returnAll: [false],
 			},
 		},

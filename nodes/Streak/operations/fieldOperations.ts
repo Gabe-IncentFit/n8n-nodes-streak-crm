@@ -1,5 +1,12 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, streakApiFormRequest, validateParameters } from './utils';
+import {
+	streakApiRequest,
+	streakApiFormRequest,
+	validateParameters,
+	fetchAllResults,
+	getPageParameter,
+	handlePagination,
+} from './utils';
 
 import { getFieldDef, toFieldValue, StreakFieldDef } from './fieldHelpers';
 
@@ -190,7 +197,19 @@ export async function handleFieldOperations(
 
 		validateParameters.call(this, { boxKey }, ['boxKey'], itemIndex);
 
-		return await streakApiRequest(this, 'GET', `/boxes/${encodeURIComponent(boxKey)}/fields`);
+		const endpoint = `/boxes/${encodeURIComponent(boxKey)}/fields`;
+		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
+
+		// Without page or limit, Streak returns every field value in one response
+		if (returnAll) {
+			return await fetchAllResults(this, endpoint, undefined, 'v1');
+		}
+
+		// v1 accepts page and limit, but its response is a bare array with no hasNextPage
+		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
+		const page = getPageParameter.call(this, itemIndex);
+
+		return await handlePagination(this, endpoint, false, limit, {}, 'v1', page);
 	} else if (operation === 'getFieldValue') {
 		const boxKeyParam = this.getNodeParameter('boxKey', itemIndex) as
 			| string

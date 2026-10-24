@@ -1,5 +1,12 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
-import { streakApiRequest, streakApiFormRequest, validateParameters } from './utils';
+import {
+	streakApiRequest,
+	streakApiFormRequest,
+	validateParameters,
+	fetchAllResults,
+	getPageParameter,
+	handlePagination,
+} from './utils';
 
 /**
  * Handle pipeline-related operations for the Streak API
@@ -11,7 +18,18 @@ export async function handlePipelineOperations(
 ): Promise<IDataObject | IDataObject[]> {
 	// Handle pipeline operations
 	if (operation === 'listAllPipelines') {
-		return await streakApiRequest(this, 'GET', '/pipelines');
+		const returnAll = this.getNodeParameter('returnAll', itemIndex, false) as boolean;
+
+		// Without page or limit, Streak returns every pipeline in one response
+		if (returnAll) {
+			return await fetchAllResults(this, '/pipelines', undefined, 'v1');
+		}
+
+		// v1 accepts page and limit, but its response is a bare array with no hasNextPage
+		const limit = this.getNodeParameter('limit', itemIndex, 50) as number;
+		const page = getPageParameter.call(this, itemIndex);
+
+		return await handlePagination(this, '/pipelines', false, limit, {}, 'v1', page);
 	} else if (operation === 'getPipeline') {
 		const pipelineKeyParam = this.getNodeParameter('pipelineKey', itemIndex) as
 			| string
