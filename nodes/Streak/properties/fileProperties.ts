@@ -121,14 +121,16 @@ export const fileProperties: INodeProperties[] = [
 		},
 	},
 
-	// Drive File ID (for add)
+	// Drive File IDs (for add)
 	{
-		displayName: 'Google Drive File ID',
+		displayName: 'Google Drive File IDs',
 		name: 'driveFileId',
 		type: 'string',
 		default: '',
 		required: true,
-		description: 'The Google Drive file ID to add to the box',
+		placeholder: 'e.g. 1AbC..., 1DeF...',
+		description:
+			'One or more Google Drive file IDs to add to the box, separated by commas or new lines. All of them are added in a single request.',
 		displayOptions: {
 			show: {
 				resource: ['file'],

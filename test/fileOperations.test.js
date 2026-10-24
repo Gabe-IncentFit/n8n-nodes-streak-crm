@@ -89,3 +89,50 @@ test('addFileToBox rejects a missing Drive file ID before calling Streak', async
 	);
 	assert.equal(context.calls.length, 0);
 });
+
+test('addFileToBox attaches several Drive files to the box in one request', async () => {
+	const attached = [
+		{ fileKey: 'file_1', driveFileId: 'drive_1' },
+		{ fileKey: 'file_2', driveFileId: 'drive_2' },
+		{ fileKey: 'file_3', driveFileId: 'drive_3' },
+	];
+	const context = createContext(
+		// Commas, spaces, new lines, a blank entry and a repeat
+		{ boxKey: 'box_1', driveFileId: 'drive_1, drive_2,\ndrive_3,, drive_2' },
+		[attached],
+	);
+
+	const result = await handleFileOperations.call(context, 'addFileToBox', 0);
+
+	assert.deepEqual(result, attached);
+	assert.equal(context.calls.length, 1);
+	assert.deepEqual(context.calls[0].requestOptions.body, [
+		{ driveFileId: 'drive_1', driveBoxKey: 'box_1' },
+		{ driveFileId: 'drive_2', driveBoxKey: 'box_1' },
+		{ driveFileId: 'drive_3', driveBoxKey: 'box_1' },
+	]);
+});
+
+test('addFileToBox accepts an array of Drive file IDs from an expression', async () => {
+	const context = createContext(
+		{ boxKey: { mode: 'list', value: 'box_1' }, driveFileId: ['drive_1', ' drive_2 '] },
+		[[]],
+	);
+
+	await handleFileOperations.call(context, 'addFileToBox', 0);
+
+	assert.deepEqual(context.calls[0].requestOptions.body, [
+		{ driveFileId: 'drive_1', driveBoxKey: 'box_1' },
+		{ driveFileId: 'drive_2', driveBoxKey: 'box_1' },
+	]);
+});
+
+test('addFileToBox rejects Drive file IDs that are only separators', async () => {
+	const context = createContext({ boxKey: 'box_1', driveFileId: ' ,\n, ' }, []);
+
+	await assert.rejects(
+		handleFileOperations.call(context, 'addFileToBox', 0),
+		/Parameter driveFileId is required for this operation/,
+	);
+	assert.equal(context.calls.length, 0);
+});

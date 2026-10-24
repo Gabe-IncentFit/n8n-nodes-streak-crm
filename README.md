@@ -123,7 +123,7 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 - **List Files in Box** - Get all files attached to a box
 - **Get File Metadata** - Retrieve a specific file's metadata by key
 - **Get File Contents** - Retrieve a file's contents (only for files of type `GMAIL_API`)
-- **Add File to Box** - Attach a Google Drive file to a box
+- **Add File to Box** - Attach one or more Google Drive files to a box in a single request
 
 ### Newsfeed Operations
 - **Get Pipeline Newsfeed** - Get recent activity for a pipeline
