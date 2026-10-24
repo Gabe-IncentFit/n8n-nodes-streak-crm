@@ -85,3 +85,65 @@ test('updateOrganization with nothing Streak would store fails before calling St
 	);
 	assert.equal(context.calls.length, 0);
 });
+
+test('updateOrganization sends Instagram handle, custom fields and links the way Streak takes them', async () => {
+	const context = createContext(
+		{
+			organizationKey: 'org_1',
+			updateFields: {
+				instagramHandle: 'acme',
+				customFields: { field: [{ key: '2001', value: 'Enterprise' }] },
+				contactLinks: ['contact_1'],
+				orgLinks: [],
+			},
+		},
+		[{ key: 'org_1' }],
+	);
+
+	await handleOrganizationOperations.call(context, 'updateOrganization', 0);
+
+	assert.deepEqual(context.calls[0].requestOptions.body, {
+		instagramHandle: 'acme',
+		contactLinks: [{ key: 'contact_1' }],
+		// An empty list removes the organization's links to other organizations
+		orgLinks: [],
+		fields: { 2001: 'Enterprise' },
+	});
+});
+
+test('createOrganization sends Instagram handle', async () => {
+	const context = createContext(
+		{ teamKey: 'team_1', name: 'Acme', additionalFields: { instagramHandle: 'acme' } },
+		[{ key: 'org_1' }],
+	);
+
+	await handleOrganizationOperations.call(context, 'createOrganization', 0);
+
+	assert.deepEqual(context.calls[0].requestOptions.body, { name: 'Acme', instagramHandle: 'acme' });
+});
+
+test('updateOrganization sends empty options so Streak clears them, and turns single values into lists', async () => {
+	const context = createContext(
+		{
+			organizationKey: 'org_1',
+			updateFields: {
+				other: '',
+				industry: '',
+				domains: [],
+				addresses: '',
+				phoneNumbers: '+1 555 0100',
+			},
+		},
+		[{ key: 'org_1' }],
+	);
+
+	await handleOrganizationOperations.call(context, 'updateOrganization', 0);
+
+	assert.deepEqual(context.calls[0].requestOptions.body, {
+		other: '',
+		industry: '',
+		domains: [],
+		addresses: [],
+		phoneNumbers: ['+1 555 0100'],
+	});
+});

@@ -83,14 +83,14 @@ The node now features a dedicated `StreakApiService` class that centralizes all 
 ### Contact Operations
 - **Get Contact** - Retrieve a specific contact by key
 - **Create Contact** - Create a new contact
-- **Update Contact** - Update properties of an existing contact
+- **Update Contact** - Update properties of an existing contact, including custom fields and links to other contacts and organizations
 - **Delete Contact** - Remove a contact
 
 ### Organization Operations
 - **Get Organization** - Retrieve a specific organization by key
 - **Create Organization** - Create a new organization. Turn on **Return Existing If Found** to get the organization that already has one of the domains instead of a duplicate
 - **Check Existing Organizations** - Find an organization by domain. If none matches, Streak creates one with those domains
-- **Update Organization** - Update properties of an existing organization
+- **Update Organization** - Update properties of an existing organization, including custom fields and links to contacts and other organizations
 - **Delete Organization** - Remove an organization
 
 ### Task Operations

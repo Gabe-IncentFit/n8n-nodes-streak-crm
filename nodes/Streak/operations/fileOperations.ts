@@ -5,25 +5,8 @@ import {
 	fetchAllResults,
 	getPageParameter,
 	handlePagination,
+	parseKeyList,
 } from './utils';
-
-/**
- * Read Drive file IDs from text separated by commas or new lines, or from an array
- * passed in by an expression. Blank entries and repeats are dropped.
- */
-function parseDriveFileIds(value: unknown): string[] {
-	const parts = Array.isArray(value) ? value : String(value ?? '').split(/[\s,]+/);
-	const ids: string[] = [];
-
-	for (const part of parts) {
-		const id = String(part ?? '').trim();
-		if (id && !ids.includes(id)) {
-			ids.push(id);
-		}
-	}
-
-	return ids;
-}
 
 /**
  * Handle file-related operations for the Streak API
@@ -65,7 +48,7 @@ export async function handleFileOperations(
 			| string
 			| { mode: string; value: string };
 		const boxKey = typeof boxKeyParam === 'string' ? boxKeyParam : boxKeyParam.value;
-		const driveFileIds = parseDriveFileIds(this.getNodeParameter('driveFileId', itemIndex));
+		const driveFileIds = parseKeyList(this.getNodeParameter('driveFileId', itemIndex));
 
 		validateParameters.call(
 			this,

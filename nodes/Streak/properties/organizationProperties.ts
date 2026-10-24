@@ -171,7 +171,7 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description:
 					'Addresses associated with the organization. Can be a single address or multiple addresses. The Streak API replaces all existing addresses with the ones you provide (does not merge).',
 			},
@@ -182,7 +182,7 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description: 'Domains associated with the organization',
 			},
 			{
@@ -205,6 +205,13 @@ export const organizationProperties: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				description: 'Organization industry',
+			},
+			{
+				displayName: 'Instagram Handle',
+				name: 'instagramHandle',
+				type: 'string',
+				default: '',
+				description: 'Instagram handle for the organization',
 			},
 			{
 				displayName: 'LinkedIn Handle',
@@ -234,7 +241,7 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description:
 					'Phone numbers associated with the organization. Can be a single number or multiple numbers. The Streak API replaces all existing numbers with the ones you provide (does not merge).',
 			},
@@ -269,9 +276,47 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description:
 					'Addresses associated with the organization. Can be a single address or multiple addresses. The Streak API replaces all existing addresses with the ones you provide (does not merge).',
+			},
+			{
+				displayName: 'Custom Fields',
+				name: 'customFields',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Custom Field',
+				default: {},
+				description:
+					"Values for the team's custom organization fields. Fields you leave out keep their values.",
+				options: [
+					{
+						displayName: 'Field',
+						name: 'field',
+						values: [
+							{
+								displayName: 'Field Name or ID',
+								name: 'key',
+								type: 'options',
+								typeOptions: {
+									loadOptionsMethod: 'getOrganizationFieldOptions',
+								},
+								default: '',
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Text to store in the field',
+							},
+						],
+					},
+				],
 			},
 			{
 				displayName: 'Domains',
@@ -280,7 +325,7 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description: 'New domains for the organization',
 			},
 			{
@@ -303,6 +348,37 @@ export const organizationProperties: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				description: 'Organization industry',
+			},
+			{
+				displayName: 'Instagram Handle',
+				name: 'instagramHandle',
+				type: 'string',
+				default: '',
+				description: 'Instagram handle for the organization',
+			},
+			{
+				displayName: 'Linked Contacts',
+				name: 'contactLinks',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Contact Key',
+				},
+				default: [],
+				description:
+					'Keys of the contacts to link to this organization. Replaces all of its current contact links, so include any you want to keep. Leave the list empty to remove them all.',
+			},
+			{
+				displayName: 'Linked Organizations',
+				name: 'orgLinks',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Organization Key',
+				},
+				default: [],
+				description:
+					'Keys of the organizations to link to this organization. Replaces all of its current organization links, so include any you want to keep. Leave the list empty to remove them all.',
 			},
 			{
 				displayName: 'LinkedIn Handle',
@@ -339,7 +415,7 @@ export const organizationProperties: INodeProperties[] = [
 				typeOptions: {
 					multipleValues: true,
 				},
-				default: '',
+				default: [],
 				description:
 					'Phone numbers associated with the organization. Can be a single number or multiple numbers. The Streak API replaces all existing numbers with the ones you provide (does not merge).',
 			},

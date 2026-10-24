@@ -153,11 +153,30 @@ export const contactProperties: INodeProperties[] = [
 				description: 'Addresses for the contact',
 			},
 			{
+				displayName: 'Domains',
+				name: 'domains',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Domain',
+				},
+				placeholder: 'example.com',
+				default: [],
+				description: 'Website domains for the contact',
+			},
+			{
 				displayName: 'Facebook Handle',
 				name: 'facebookHandle',
 				type: 'string',
 				default: '',
 				description: 'Facebook handle of the contact',
+			},
+			{
+				displayName: 'Instagram Handle',
+				name: 'instagramHandle',
+				type: 'string',
+				default: '',
+				description: 'Instagram handle of the contact',
 			},
 			{
 				displayName: 'LinkedIn Handle',
@@ -234,6 +253,55 @@ export const contactProperties: INodeProperties[] = [
 				description: 'New addresses for the contact',
 			},
 			{
+				displayName: 'Custom Fields',
+				name: 'customFields',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				placeholder: 'Add Custom Field',
+				default: {},
+				description: "Values for the team's custom contact fields. Fields you leave out keep their values.",
+				options: [
+					{
+						displayName: 'Field',
+						name: 'field',
+						values: [
+							{
+								displayName: 'Field Name or ID',
+								name: 'key',
+								type: 'options',
+								typeOptions: {
+									loadOptionsMethod: 'getContactFieldOptions',
+								},
+								default: '',
+								description:
+									'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Text to store in the field',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Domains',
+				name: 'domains',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Domain',
+				},
+				placeholder: 'example.com',
+				default: [],
+				description: 'New website domains for the contact',
+			},
+			{
 				displayName: 'Email Addresses',
 				name: 'emailAddresses',
 				type: 'string',
@@ -265,6 +333,37 @@ export const contactProperties: INodeProperties[] = [
 				type: 'string',
 				default: '',
 				description: 'New first name for the contact',
+			},
+			{
+				displayName: 'Instagram Handle',
+				name: 'instagramHandle',
+				type: 'string',
+				default: '',
+				description: 'New Instagram handle for the contact',
+			},
+			{
+				displayName: 'Linked Contacts',
+				name: 'contactLinks',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Contact Key',
+				},
+				default: [],
+				description:
+					'Keys of the contacts to link to this contact. Replaces all of its current contact links, so include any you want to keep. Leave the list empty to remove them all.',
+			},
+			{
+				displayName: 'Linked Organizations',
+				name: 'orgLinks',
+				type: 'string',
+				typeOptions: {
+					multipleValues: true,
+					multipleValueButtonText: 'Add Organization Key',
+				},
+				default: [],
+				description:
+					'Keys of the organizations to link to this contact. Replaces all of its current organization links, so include any you want to keep. Leave the list empty to remove them all.',
 			},
 			{
 				displayName: 'LinkedIn Handle',

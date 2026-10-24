@@ -1,5 +1,6 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
 import { streakApiRequest, validateParameters } from './utils';
+import { getCustomFieldValues, toLinks } from './directoryHelpers';
 
 /**
  * Handle contact-related operations for the Streak API
@@ -72,6 +73,10 @@ export async function handleContactOperations(
 			body.addresses = additionalFields.addresses;
 		}
 
+		if (additionalFields.domains !== undefined) {
+			body.domains = additionalFields.domains;
+		}
+
 		if (additionalFields.other !== undefined) {
 			body.other = additionalFields.other;
 		}
@@ -88,6 +93,10 @@ export async function handleContactOperations(
 			body.linkedinHandle = additionalFields.linkedinHandle;
 		}
 
+		if (additionalFields.instagramHandle !== undefined) {
+			body.instagramHandle = additionalFields.instagramHandle;
+		}
+
 		if (additionalFields.photoUrl !== undefined) {
 			body.photoUrl = additionalFields.photoUrl;
 		}
@@ -99,14 +108,6 @@ export async function handleContactOperations(
 		const updateFields = this.getNodeParameter('updateFields', itemIndex, {}) as IDataObject;
 
 		validateParameters.call(this, { contactKey }, ['contactKey'], itemIndex);
-
-		if (Object.keys(updateFields).length === 0) {
-			throw new NodeOperationError(
-				this.getNode(),
-				'At least one field to update must be specified',
-				{ itemIndex },
-			);
-		}
 
 		const body: IDataObject = {};
 
@@ -121,6 +122,25 @@ export async function handleContactOperations(
 
 		if (updateFields.addresses !== undefined) {
 			body.addresses = updateFields.addresses;
+		}
+
+		if (updateFields.domains !== undefined) {
+			body.domains = updateFields.domains;
+		}
+
+		// Streak replaces all links of each kind with the ones sent, and an empty list removes them
+		if (updateFields.contactLinks !== undefined) {
+			body.contactLinks = toLinks(updateFields.contactLinks);
+		}
+
+		if (updateFields.orgLinks !== undefined) {
+			body.orgLinks = toLinks(updateFields.orgLinks);
+		}
+
+		// Streak merges custom field values, so fields left out keep their values
+		const fields = getCustomFieldValues.call(this, updateFields.customFields, itemIndex);
+		if (fields) {
+			body.fields = fields;
 		}
 
 		// Handle string fields - only include if not undefined
@@ -152,8 +172,20 @@ export async function handleContactOperations(
 			body.linkedinHandle = updateFields.linkedinHandle;
 		}
 
+		if (updateFields.instagramHandle !== undefined) {
+			body.instagramHandle = updateFields.instagramHandle;
+		}
+
 		if (updateFields.photoUrl !== undefined) {
 			body.photoUrl = updateFields.photoUrl;
+		}
+
+		if (Object.keys(body).length === 0) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'At least one field to update must be specified',
+				{ itemIndex },
+			);
 		}
 
 		return await streakApiRequest(this, 'POST', `/contacts/${contactKey}`, body);

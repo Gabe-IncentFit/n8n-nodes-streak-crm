@@ -1,5 +1,17 @@
 import { IExecuteFunctions, IDataObject, NodeOperationError  } from 'n8n-workflow';
 import { streakApiRequest, validateParameters } from './utils';
+import { getCustomFieldValues, toLinks } from './directoryHelpers';
+
+/**
+ * Streak needs lists as arrays. A single value from an expression becomes a one-item list,
+ * and an empty string becomes an empty list.
+ */
+function toList(value: unknown): unknown[] {
+	if (Array.isArray(value)) {
+		return value;
+	}
+	return value === '' || value === null ? [] : [value];
+}
 
 /**
  * Handle organization-related operations for the Streak API
@@ -69,6 +81,10 @@ export async function handleOrganizationOperations(
 			body.industry = additionalFields.industry;
 		}
 
+		if (additionalFields.instagramHandle) {
+			body.instagramHandle = additionalFields.instagramHandle;
+		}
+
 		// Streak spells these linkedinHandle and logoURL, and silently drops other spellings
 		if (additionalFields.linkedInHandle) {
 			body.linkedinHandle = additionalFields.linkedInHandle;
@@ -132,55 +148,70 @@ export async function handleOrganizationOperations(
 
 		const body: IDataObject = {};
 
-		if (updateFields.addresses) {
-			// Addresses field must be an array - convert string to array if needed
-			body.addresses = Array.isArray(updateFields.addresses)
-				? updateFields.addresses
-				: [updateFields.addresses];
+		// Send every option that was added, even when empty. Streak keeps values that are left
+		// out, clears text sent as an empty string and empties lists sent as an empty list.
+		if (updateFields.addresses !== undefined) {
+			body.addresses = toList(updateFields.addresses);
 		}
 
-		if (updateFields.domains && (updateFields.domains as string[]).length > 0) {
-			body.domains = updateFields.domains;
+		if (updateFields.domains !== undefined) {
+			body.domains = toList(updateFields.domains);
 		}
 
-		if (updateFields.employeeCount) {
+		if (updateFields.employeeCount !== undefined) {
 			body.employeeCount = updateFields.employeeCount;
 		}
 
-		if (updateFields.facebookHandle) {
+		if (updateFields.facebookHandle !== undefined) {
 			body.facebookHandle = updateFields.facebookHandle;
 		}
 
-		if (updateFields.industry) {
+		if (updateFields.industry !== undefined) {
 			body.industry = updateFields.industry;
 		}
 
+		if (updateFields.instagramHandle !== undefined) {
+			body.instagramHandle = updateFields.instagramHandle;
+		}
+
 		// Streak spells these linkedinHandle and logoURL, and silently drops other spellings
-		if (updateFields.linkedInHandle) {
+		if (updateFields.linkedInHandle !== undefined) {
 			body.linkedinHandle = updateFields.linkedInHandle;
 		}
 
-		if (updateFields.logoUrl) {
+		if (updateFields.logoUrl !== undefined) {
 			body.logoURL = updateFields.logoUrl;
 		}
 
-		if (updateFields.name) {
+		if (updateFields.name !== undefined) {
 			body.name = updateFields.name;
 		}
 
-		if (updateFields.other) {
+		if (updateFields.other !== undefined) {
 			body.other = updateFields.other;
 		}
 
-		if (updateFields.phoneNumbers) {
-			// phoneNumbers field must be an array - convert string to array if needed
-			body.phoneNumbers = Array.isArray(updateFields.phoneNumbers)
-				? updateFields.phoneNumbers
-				: [updateFields.phoneNumbers];
+		if (updateFields.phoneNumbers !== undefined) {
+			body.phoneNumbers = toList(updateFields.phoneNumbers);
 		}
 
-		if (updateFields.twitterHandle) {
+		if (updateFields.twitterHandle !== undefined) {
 			body.twitterHandle = updateFields.twitterHandle;
+		}
+
+		// Streak replaces all links of each kind with the ones sent, and an empty list removes them
+		if (updateFields.contactLinks !== undefined) {
+			body.contactLinks = toLinks(updateFields.contactLinks);
+		}
+
+		if (updateFields.orgLinks !== undefined) {
+			body.orgLinks = toLinks(updateFields.orgLinks);
+		}
+
+		// Streak merges custom field values, so fields left out keep their values
+		const fields = getCustomFieldValues.call(this, updateFields.customFields, itemIndex);
+		if (fields) {
+			body.fields = fields;
 		}
 
 		if (Object.keys(body).length === 0) {

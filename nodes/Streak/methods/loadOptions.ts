@@ -149,6 +149,54 @@ function getTeamMemberLabel(member: TeamMemberRecord): string {
 	return member.email && label !== member.email ? `${label} (${member.email})` : label;
 }
 
+interface TeamFieldRecord {
+	key: string;
+	name?: string;
+	type?: string;
+}
+
+// Streak returns custom contact and organization fields as an object keyed by field key
+function parseTeamFieldsResponse(response: unknown): TeamFieldRecord[] {
+	if (!response || typeof response !== 'object') return [];
+	const results = (response as Record<string, unknown>).results;
+	const values = Array.isArray(response)
+		? response
+		: Array.isArray(results)
+			? results
+			: Object.values(response as Record<string, unknown>);
+	return values.filter((v): v is TeamFieldRecord => isTeamRecord(v));
+}
+
+/**
+ * List the custom contact or organization fields of every team the user is in. Update
+ * Contact and Update Organization have no team parameter, so fields from all teams are
+ * offered, labelled with the team when there's more than one.
+ */
+async function getTeamFieldOptions(
+	context: ILoadOptionsFunctions,
+	resource: 'contacts' | 'organizations',
+): Promise<INodePropertyOptions[]> {
+	const teams = parseTeamsResponse(
+		await streakApiRequest(context, 'GET', '/users/me/teams'),
+	).filter((team) => team.key);
+	const options: INodePropertyOptions[] = [];
+
+	for (const team of teams) {
+		const fields = parseTeamFieldsResponse(
+			await streakApiRequest(context, 'GET', `/teams/${team.key}/${resource}/fields`),
+		);
+		for (const field of fields) {
+			// Streak computes formula fields, so they can't be set
+			if (field.type === 'FORMULA') continue;
+			const type = field.type || 'unknown';
+			const details = teams.length > 1 ? `${type}, ${team.name || team.key}` : type;
+			options.push({ name: `${field.name || 'Unnamed Field'} (${details})`, value: field.key });
+		}
+	}
+
+	return options;
+}
+
 export const loadOptions = {
 	async getPipelineOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		try {
@@ -207,6 +255,22 @@ export const loadOptions = {
 
 	async getTeamMemberOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		return await loadOptions.getTeamMemberEmailOptions.call(this);
+	},
+
+	async getContactFieldOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			return await getTeamFieldOptions(this, 'contacts');
+		} catch {
+			return [];
+		}
+	},
+
+	async getOrganizationFieldOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		try {
+			return await getTeamFieldOptions(this, 'organizations');
+		} catch {
+			return [];
+		}
 	},
 
 	async getStageOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {

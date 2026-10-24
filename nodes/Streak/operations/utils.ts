@@ -157,6 +157,24 @@ export async function streakApiFormRequest(
 }
 
 /**
+ * Read keys or IDs from text separated by commas or new lines, or from an array
+ * passed in by an expression. Blank entries and repeats are dropped.
+ */
+export function parseKeyList(value: unknown): string[] {
+	const parts = Array.isArray(value) ? value : String(value ?? '').split(/[\s,]+/);
+	const keys: string[] = [];
+
+	for (const part of parts) {
+		const key = String(part ?? '').trim();
+		if (key && !keys.includes(key)) {
+			keys.push(key);
+		}
+	}
+
+	return keys;
+}
+
+/**
  * Validate that required parameters are present
  */
 export function validateParameters(
